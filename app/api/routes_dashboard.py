@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db_session
 from app.runtime_paths import get_templates_dir
-from app.services.export_service import ExportService
 from app.services.ingest_service import IngestService
 from app.services.snapshot_service import SnapshotService
 
@@ -18,7 +17,6 @@ templates = Jinja2Templates(directory=str(get_templates_dir()))
 SEOUL_TIMEZONE = timezone(timedelta(hours=9))
 ingest_service = IngestService()
 snapshot_service = SnapshotService()
-export_service = ExportService(snapshot_service=snapshot_service)
 
 
 def current_seoul_date() -> date:
@@ -35,11 +33,6 @@ def dashboard_page(
     context.update(
         {
             "request": request,
-            "inline_css": None,
-            "inline_js": None,
-            "static_css_url": "/static/css/dashboard.css",
-            "static_js_url": "/static/js/dashboard.js",
-            "export_mode": False,
         }
     )
     return templates.TemplateResponse(request, "dashboard.html", context)
@@ -99,14 +92,6 @@ def dashboard_sectors(
     }
 
 
-@router.get("/api/v1/dashboard/export")
-def dashboard_export_info(
-    date_param: date | None = Query(default=None, alias="date"),
-    db: Session = Depends(get_db_session),
-) -> dict:
-    return export_service.get_export_info(db, date_param)
-
-
 @router.post("/api/v1/dashboard/update")
 def dashboard_manual_update(
     db: Session = Depends(get_db_session),
@@ -114,10 +99,7 @@ def dashboard_manual_update(
     snapshot_date = current_seoul_date()
     ingest_summary = ingest_service.run(snapshot_date=snapshot_date)
     publish_result = snapshot_service.publish(snapshot_date)
-
-    export_service.export_dashboard_html(db, snapshot_date)
     db.commit()
-    export_info = export_service.get_export_info(db, snapshot_date)
     snapshot = snapshot_service.get_dashboard_snapshot(db, snapshot_date)
     snapshot_payload = snapshot_service.serialize_dashboard_snapshot(snapshot)
 
@@ -125,7 +107,6 @@ def dashboard_manual_update(
         "snapshot_date": snapshot_date.isoformat(),
         "ingest": ingest_summary.model_dump(mode="json"),
         "publish": publish_result,
-        "export": export_info,
         "last_updated_at": snapshot_payload["created_at"],
         "last_updated_text": snapshot_payload["created_at_text"],
     }

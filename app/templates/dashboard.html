@@ -15,11 +15,7 @@
       }
     })();
   </script>
-  {% if inline_css %}
-    <style>{{ inline_css | safe }}</style>
-  {% else %}
-    <link rel="stylesheet" href="{{ static_css_url or '/static/css/dashboard.css' }}" />
-  {% endif %}
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
 </head>
 <body>
   <div class="container">
@@ -357,10 +353,6 @@
     </section>
   </div>
 
-  {% if inline_js %}
-    <script>{{ inline_js | safe }}</script>
-  {% elif static_js_url %}
-    <script src="{{ static_js_url }}"></script>
-  {% endif %}
+  <script src="/static/js/dashboard.js"></script>
 </body>
 </html>

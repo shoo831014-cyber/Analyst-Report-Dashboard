@@ -270,7 +270,6 @@ class SnapshotService:
             "upside_top10_json": upside_top10,
             "sector_summary_json": sector_summary_json,
             "widget_payload_json": widget_payload,
-            "html_export_path": None,
             "created_at": utcnow_naive(),
         }
 
@@ -360,7 +359,6 @@ class SnapshotService:
             "upside_top10": snapshot.upside_top10_json or [],
             "sector_summary": snapshot.sector_summary_json or [],
             "widget_payload": snapshot.widget_payload_json or {},
-            "html_export_path": snapshot.html_export_path,
             "created_at": self._format_snapshot_created_at_iso(snapshot.created_at),
             "created_at_text": self._format_snapshot_created_at_text(snapshot.created_at),
         }

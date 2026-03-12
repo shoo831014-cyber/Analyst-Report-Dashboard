@@ -4,7 +4,6 @@ from datetime import date, datetime
 from sqlalchemy import update
 
 from app.db.models import CompanyMaster
-from app.services.export_service import ExportService
 from app.services.snapshot_service import SnapshotService
 
 
@@ -90,32 +89,6 @@ def test_dashboard_page_handles_empty_state(client) -> None:
     assert "상세 테이블" in response.text
 
 
-def test_dashboard_export_api_returns_export_path(
-    client,
-    session_factory,
-    seeded_snapshot_source_data,
-    tmp_path,
-) -> None:
-    snapshot_service = SnapshotService(session_factory=session_factory)
-    snapshot_service.publish(seeded_snapshot_source_data["latest_date"])
-
-    export_service = ExportService(
-        snapshot_service=snapshot_service,
-        export_dir=tmp_path / "exports",
-    )
-    with session_factory() as session:
-        export_service.export_dashboard_html(session, seeded_snapshot_source_data["latest_date"])
-        session.commit()
-
-    response = client.get("/api/v1/dashboard/export", params={"date": "2026-03-06"})
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["snapshot_date"] == "2026-03-06"
-    assert payload["exists"] is True
-    assert payload["html_export_path"].endswith("dashboard.html")
-    assert payload["html_export_url"] == "/exports/2026-03-06/dashboard.html"
-
-
 def test_dashboard_page_renders_manual_update_button(client) -> None:
     response = client.get("/dashboard")
     assert response.status_code == 200
@@ -160,7 +133,6 @@ def test_dashboard_manual_update_api_uses_current_seoul_date(client, monkeypatch
                     "upside_top10_json": [],
                     "sector_summary_json": [],
                     "widget_payload_json": {},
-                    "html_export_path": None,
                     "created_at": datetime(2026, 3, 9, 1, 23, 45),
                 },
             )()
@@ -171,18 +143,9 @@ def test_dashboard_manual_update_api_uses_current_seoul_date(client, monkeypatch
                 "created_at_text": "2026-03-09 10:23:45",
             }
 
-    class StubExportService:
-        def export_dashboard_html(self, session, snapshot_date: date):
-            calls["export_date"] = snapshot_date
-            return None
-
-        def get_export_info(self, session, snapshot_date: date) -> dict:
-            return {"snapshot_date": snapshot_date.isoformat(), "exists": True}
-
     monkeypatch.setattr("app.api.routes_dashboard.current_seoul_date", lambda: target_date)
     monkeypatch.setattr("app.api.routes_dashboard.ingest_service", StubIngestService())
     monkeypatch.setattr("app.api.routes_dashboard.snapshot_service", StubSnapshotService())
-    monkeypatch.setattr("app.api.routes_dashboard.export_service", StubExportService())
 
     response = client.post("/api/v1/dashboard/update")
     assert response.status_code == 200
@@ -193,5 +156,4 @@ def test_dashboard_manual_update_api_uses_current_seoul_date(client, monkeypatch
     assert payload["last_updated_text"] == "2026-03-09 10:23:45"
     assert calls["ingest_date"] == target_date
     assert calls["publish_date"] == target_date
-    assert calls["export_date"] == target_date
     assert calls["snapshot_lookup_date"] == target_date

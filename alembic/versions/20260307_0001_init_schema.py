@@ -193,7 +193,6 @@ def _ensure_daily_dashboard_snapshot(inspector: Any) -> None:
             sa.Column("upside_top10_json", sa.JSON(), nullable=True),
             sa.Column("sector_summary_json", sa.JSON(), nullable=True),
             sa.Column("widget_payload_json", sa.JSON(), nullable=True),
-            sa.Column("html_export_path", sa.String(length=255), nullable=True),
             sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         )
 

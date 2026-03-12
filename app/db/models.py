@@ -120,7 +120,6 @@ class DailyDashboardSnapshot(TimestampMixin, Base):
     upside_top10_json: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     sector_summary_json: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     widget_payload_json: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
-    html_export_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 
 class JobRun(Base):

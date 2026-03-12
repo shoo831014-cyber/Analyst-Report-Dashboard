@@ -24,17 +24,16 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.settings = settings
     configure_logging(settings.log_level, settings.log_path)
-    ensure_runtime_dirs([settings.export_path, settings.snapshot_path, settings.log_path])
+    ensure_runtime_dirs([settings.snapshot_path, settings.log_path])
     init_db()
     yield
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    ensure_runtime_dirs([settings.export_path, settings.snapshot_path, settings.log_path])
+    ensure_runtime_dirs([settings.snapshot_path, settings.log_path])
     app = FastAPI(title=settings.app_name, lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=str(get_static_dir())), name="static")
-    app.mount("/exports", StaticFiles(directory=str(settings.export_path), html=True), name="exports")
 
     app.include_router(health_router)
     app.include_router(dashboard_router)
