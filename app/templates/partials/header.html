@@ -1,0 +1,57 @@
+<header class="page-header">
+  <div class="header-main">
+    <h1>{{ page_title }}</h1>
+    <p class="header-subtitle">{{ subtitle }}</p>
+  </div>
+
+  <div class="header-side">
+    <div class="header-actions">
+      <button
+        type="button"
+        class="theme-toggle-button"
+        data-theme-toggle-button
+        data-light-label="다크 모드"
+        data-dark-label="라이트 모드"
+        aria-pressed="false"
+      >
+        다크 모드
+      </button>
+      <button
+        type="button"
+        class="update-button"
+        data-manual-update-button
+        data-default-label="수동 업데이트"
+      >
+        수동 업데이트
+      </button>
+      <div class="update-feedback">
+        <span class="update-status" data-manual-update-status aria-live="polite">대기 중</span>
+        <span class="update-meta" data-last-updated-text>
+          마지막 업데이트 {{ last_updated_text or "-" }}
+        </span>
+      </div>
+    </div>
+
+    <div class="header-stats">
+      {% for item in compact_kpis %}
+        <article class="header-stat tone-{{ item.tone }}">
+          <p class="header-stat-label">{{ item.label }}</p>
+          <p class="header-stat-value">{{ item.value_text }}</p>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% if available_dates %}
+      <div class="date-chip-list">
+        {% for available_date in available_dates %}
+          <a
+            class="date-chip {% if available_date == snapshot_date %}is-active{% endif %}"
+            href="/dashboard?date={{ available_date }}"
+          >
+            {{ available_date }}
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</header>

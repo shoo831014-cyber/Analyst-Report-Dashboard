@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ page_title }}</title>
+  <script>
+    (() => {
+      try {
+        const storedTheme = window.localStorage.getItem("dashboardTheme");
+        const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = storedTheme || preferredTheme;
+      } catch (error) {
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+  {% if inline_css %}
+    <style>{{ inline_css | safe }}</style>
+  {% else %}
+    <link rel="stylesheet" href="{{ static_css_url or '/static/css/dashboard.css' }}" />
+  {% endif %}
+</head>
+<body>
+  <div class="container">
+    {% include "partials/header.html" %}
+
+    {% if summary_banner_title %}
+      <section class="panel brief-panel">
+        <div class="brief-main">{{ summary_banner_title }}</div>
+        {% if summary_banner_notes %}
+          <div class="brief-sub">
+            {% for note in summary_banner_notes %}
+              <span>{{ note }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    <section class="panel heatmap-panel">
+      <div class="section-head">
+        <div>
+          <h2>리포트 히트맵</h2>
+          <p class="section-subtitle">전체 종목을 표시하고, 2건 이상 언급된 종목만 숫자 배지를 붙입니다.</p>
+        </div>
+      </div>
+      {% if report_heatmap_primary_items or report_heatmap_secondary_items %}
+        {% if report_heatmap_primary_items %}
+          <div class="heatmap-chip-list heatmap-chip-list-primary">
+            {% for item in report_heatmap_primary_items %}
+              <span class="heatmap-chip heatmap-chip-{{ item.intensity }} heatmap-chip-{{ item.emphasis }} heatmap-chip-{{ item.size }}">
+                <span class="chip-name">{{ item.company_name }}</span>
+                {% if item.show_count_badge %}
+                  <span class="chip-count-badge">{{ item.count_badge }}</span>
+                {% endif %}
+              </span>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if report_heatmap_secondary_items %}
+          <div class="heatmap-chip-list heatmap-chip-list-secondary">
+            {% for item in report_heatmap_secondary_items %}
+              <span class="heatmap-chip heatmap-chip-{{ item.intensity }} heatmap-chip-{{ item.emphasis }} heatmap-chip-{{ item.size }}">
+                <span class="chip-name">{{ item.company_name }}</span>
+              </span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">표시할 종목이 없습니다.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel spotlight-panel">
+      <div class="section-head">
+        <div>
+          <h2>Spotlight Top3</h2>
+          <p class="section-subtitle">오늘 가장 많이 언급된 핵심 종목 3개입니다.</p>
+        </div>
+      </div>
+      {% if top3_cards %}
+        <div class="spotlight-grid">
+          {% for item in top3_cards %}
+            <article class="spotlight-card">
+              <div class="spotlight-watermark">{{ item.rank }}</div>
+              <div class="spotlight-card-header">
+                <div class="spotlight-head">
+                  <div>
+                    <h3>{{ item.company_name }}</h3>
+                    <p class="meta-line">{{ item.company_code }} · {{ item.support_line }}</p>
+                  </div>
+                </div>
+                <div class="spotlight-glance">
+                  <span class="glance-count">{{ item.report_count_text }}</span>
+                  <strong class="glance-upside {{ item.avg_upside_pct_tone }}">{{ item.avg_upside_pct_text }}</strong>
+                </div>
+              </div>
+
+              <div class="spotlight-badge-row">
+                <span class="spotlight-badge badge-{{ item.summary_badge_tone }}">{{ item.summary_badge_text }}</span>
+              </div>
+
+              <p class="spotlight-highlight">{{ item.highlight_text }}</p>
+
+              <div class="spotlight-metrics">
+                <div class="spotlight-metric">
+                  <span class="label">리포트 수</span>
+                  <strong>{{ item.report_count_text }}</strong>
+                </div>
+                <div class="spotlight-metric">
+                  <span class="label">평균 목표주가</span>
+                  <strong>{{ item.avg_target_price_text }}</strong>
+                </div>
+                <div class="spotlight-metric">
+                  <span class="label">전일종가</span>
+                  <strong>{{ item.prev_close_price_text }}</strong>
+                </div>
+                <div class="spotlight-metric">
+                  <span class="label">평균 상승여력</span>
+                  <strong class="{{ item.avg_upside_pct_tone }}">{{ item.avg_upside_pct_text }}</strong>
+                </div>
+              </div>
+
+              <div class="opinion-strip">
+                {% for opinion in item.opinions %}
+                  <span class="opinion-pill tone-{{ opinion.tone }}">{{ opinion.label }} {{ opinion.value_text }}</span>
+                {% endfor %}
+              </div>
+
+              <ul class="spotlight-points">
+                {% for point in item.spotlight_summaries %}
+                  <li>{{ point }}</li>
+                {% endfor %}
+              </ul>
+
+              <p class="spotlight-footnote">
+                <span
+                  class="spotlight-provider-info"
+                  {% if item.provider_tooltip_text %}title="{{ item.provider_tooltip_text }}"{% endif %}
+                >
+                  제공처 {{ item.provider_count_text }}곳
+                </span>
+              </p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">표시할 Top3 데이터가 없습니다.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel sector-section">
+      <div class="section-head">
+        <div>
+          <h2>섹터별 리포트 현황</h2>
+          <p class="section-subtitle">FnGuide, 수동 매핑, 제목 키워드 규칙을 순차 적용한 결과입니다.</p>
+        </div>
+      </div>
+      {% if sector_cards %}
+        <div class="sector-grid">
+          {% for sector in sector_cards %}
+            <article class="sector-card">
+              <div class="sector-head">
+                <div>
+                  <h3>{{ sector.sector_name_display }}</h3>
+                  <p class="sector-meta">{{ sector.report_count_text }} · 평균 상승여력 <span class="{{ sector.avg_upside_pct_tone }}">{{ sector.avg_upside_pct_text }}</span></p>
+                </div>
+                <div class="sector-head-side">
+                  <span class="sector-report-chip">{{ sector.report_count_chip }}</span>
+                  <span class="sector-count">{{ loop.index }}</span>
+                </div>
+              </div>
+
+              {% if sector.company_rows %}
+                <div class="sector-table-wrap">
+                  <table class="sector-table">
+                    <thead>
+                      <tr>
+                        <th>종목</th>
+                        <th>의견</th>
+                        <th class="numeric">목표가</th>
+                        <th class="numeric">전일종가</th>
+                        <th class="numeric">상승여력</th>
+                        <th>핵심 내용</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for company in sector.company_rows %}
+                        <tr>
+                          <td class="sector-company-cell">
+                            <strong>{{ company.company_name }}</strong>
+                            <span class="table-subtext">{{ company.report_count_text }}</span>
+                          </td>
+                          <td><span class="opinion-pill tone-{{ company.opinion_badge_tone }}">{{ company.opinion_badge_text }}</span></td>
+                          <td class="numeric">{{ company.avg_target_price_text }}</td>
+                          <td class="numeric">{{ company.prev_close_price_text }}</td>
+                          <td class="numeric {{ company.avg_upside_pct_tone }}">{{ company.avg_upside_pct_text }}</td>
+                          <td class="sector-summary-cell" title="{{ company.summary_full_text }}">{{ company.summary_text }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="empty-inline">데이터 없음</div>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">표시할 섹터 데이터가 없습니다.</div>
+      {% endif %}
+    </section>
+
+    <section class="bottom-summary-grid">
+      <article class="panel compact-summary-panel">
+        <div class="section-head compact-head">
+          <h2>투자의견 분포</h2>
+        </div>
+        {% if opinion_distribution.rows %}
+          <div class="distribution-bar">
+            {% for item in opinion_distribution.rows %}
+              <span class="distribution-segment segment-{{ item.tone }}" style="width: {{ item.bar_width_pct }}%;"></span>
+            {% endfor %}
+          </div>
+          <div class="distribution-list">
+            {% for item in opinion_distribution.rows %}
+              <div class="distribution-row">
+                <div class="distribution-label">
+                  <span class="mini-pill mini-pill-{{ item.tone }}">{{ item.label }}</span>
+                  <span>{{ item.count_text }}</span>
+                </div>
+                <strong>{{ item.percent_text }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">표시할 의견 분포 데이터가 없습니다.</div>
+        {% endif %}
+      </article>
+
+      <article class="panel compact-summary-panel">
+        <div class="section-head compact-head">
+          <h2>상승여력 Top10</h2>
+        </div>
+        {% if upside_ranking %}
+          <ol class="upside-ranking-list">
+            {% for item in upside_ranking %}
+              <li class="upside-ranking-item">
+                <span class="ranking-number">{{ item.rank }}</span>
+                <div class="ranking-main">
+                  <strong>{{ item.company_name }}</strong>
+                  <span class="table-subtext">{{ item.company_code }} · {{ item.report_count_text }}</span>
+                </div>
+                <strong class="ranking-value {{ item.avg_upside_pct_tone }}">{{ item.avg_upside_pct_text }}</strong>
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <div class="empty-state">표시할 상승여력 데이터가 없습니다.</div>
+        {% endif %}
+      </article>
+
+      <article class="panel compact-summary-panel">
+        <div class="section-head compact-head">
+          <h2>등급별 종목 재정리</h2>
+        </div>
+        <div class="rating-bucket-list compact-rating-buckets">
+          {% for bucket in rating_buckets %}
+            <section class="rating-bucket rating-bucket-{{ bucket.grade|lower }}">
+              <div class="rating-title-row">
+                <span class="grade-badge grade-{{ bucket.grade|lower }}">{{ bucket.grade }}</span>
+                <div>
+                  <strong>{{ bucket.title }}</strong>
+                  <p class="rating-description">{{ bucket.description }}</p>
+                </div>
+              </div>
+              {% if bucket.rows %}
+                <ul class="rating-item-list">
+                  {% for item in bucket.rows %}
+                    <li class="rating-item">
+                      <div>
+                        <strong>{{ item.company_name }}</strong>
+                        <span class="table-subtext">{{ item.company_code }} · {{ item.report_count_text }}</span>
+                      </div>
+                      <div class="rating-item-meta">
+                        <span>{{ item.opinion_summary }}</span>
+                        <strong class="{{ item.avg_upside_pct_tone }}">{{ item.avg_upside_pct_text }}</strong>
+                      </div>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="empty-inline">데이터 없음</div>
+              {% endif %}
+            </section>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="panel detail-panel">
+      <div class="section-head">
+        <div>
+          <h2>상세 테이블</h2>
+          <p class="section-subtitle">
+            report_count 기준 내림차순 정렬입니다.
+            {% if layout_mode.hidden_company_rows_count > 0 %}
+              기본 {{ layout_mode.visible_company_limit }}행 높이로 표시하고 나머지는 스크롤로 확인합니다.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div class="table-wrap detail-table-scroll" data-visible-rows="{{ layout_mode.visible_company_limit }}">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>종목코드</th>
+              <th>종목명</th>
+              <th>섹터</th>
+              <th class="center">리포트수</th>
+              <th class="center">BUY</th>
+              <th class="center">HOLD</th>
+              <th class="center">SELL</th>
+              <th class="center">NR</th>
+              <th class="numeric">평균 목표주가</th>
+              <th class="numeric">전일종가</th>
+              <th class="numeric">상승여력</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if table_rows %}
+              {% for row in table_rows %}
+                <tr>
+                  <td class="code-cell">{{ row.company_code }}</td>
+                  <td class="name-cell">{{ row.company_name }}</td>
+                  <td>{{ row.sector_name_display }}</td>
+                  <td class="center">{{ row.report_count_text }}</td>
+                  <td class="center">{{ row.buy_count_text }}</td>
+                  <td class="center">{{ row.hold_count_text }}</td>
+                  <td class="center">{{ row.sell_count_text }}</td>
+                  <td class="center">{{ row.nr_count_text }}</td>
+                  <td class="numeric">{{ row.avg_target_price_text }}</td>
+                  <td class="numeric">{{ row.prev_close_price_text }}</td>
+                  <td class="numeric {{ row.avg_upside_pct_tone }}">{{ row.avg_upside_pct_text }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="11" class="empty-state table-empty">표시할 종목 요약 데이터가 없습니다.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  {% if inline_js %}
+    <script>{{ inline_js | safe }}</script>
+  {% elif static_js_url %}
+    <script src="{{ static_js_url }}"></script>
+  {% endif %}
+</body>
+</html>

@@ -1,0 +1,2 @@
+"""Naver collector package."""
+

@@ -1,0 +1,2 @@
+"""FnGuide collector package."""
+

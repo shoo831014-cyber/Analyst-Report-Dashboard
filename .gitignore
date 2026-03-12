@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+.env
+
+# Python packaging/build artifacts
+build/
+dist/
+
+# Local runtime data
+data/app.db
+data/exports/
+data/snapshots/
+data/logs/
+
+# Local executable output
+*.exe
+
+# Playwright / browser artifacts
+playwright-report/

@@ -1,0 +1,41 @@
+[project]
+name = "analyst-report-dashboard"
+version = "0.1.0"
+description = "MVP dashboard for analyst report aggregation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.116.0",
+  "uvicorn[standard]>=0.35.0",
+  "jinja2>=3.1.6",
+  "pydantic>=2.11.0",
+  "pydantic-settings>=2.10.0",
+  "sqlalchemy>=2.0.43",
+  "alembic>=1.16.0",
+  "httpx>=0.28.1",
+  "beautifulsoup4>=4.13.4",
+  "lxml>=6.0.1",
+  "playwright>=1.55.0",
+  "tenacity>=9.1.2",
+  "orjson>=3.11.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.4.2",
+  "pytest-asyncio>=1.2.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["templates/**/*.html", "static/**/*.css", "static/**/*.js"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
