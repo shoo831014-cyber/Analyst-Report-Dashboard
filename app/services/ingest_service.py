@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.collectors.fnguide.client import FnGuideCollector
 from app.collectors.fnguide.parser_requests import normalize_text, parse_date_value
 from app.collectors.fnguide.selectors import MAX_ALLOWED_MISSING_RATIO, build_report_reference_url
+from app.config import get_settings
 from app.db import session as db_session
 from app.db.base import Base
 from app.db.models import CompanyMaster, JobRun, ReportRawMeta
@@ -91,13 +92,20 @@ class IngestService:
 
                 rows = requested_rows
                 if fallback_used:
-                    source = "playwright"
-                    rows = self.collector.fetch_with_playwright(snapshot_date)
-                    logger.info(
-                        "FnGuide ingest fallback executed. snapshot_date=%s rows=%s",
-                        snapshot_date.isoformat(),
-                        len(rows),
-                    )
+                    settings = get_settings()
+                    if settings.enable_playwright_fallback:
+                        source = "playwright"
+                        rows = self.collector.fetch_with_playwright(snapshot_date)
+                        logger.info(
+                            "FnGuide ingest fallback executed. snapshot_date=%s rows=%s",
+                            snapshot_date.isoformat(),
+                            len(rows),
+                        )
+                    else:
+                        logger.warning(
+                            "FnGuide ingest fallback needed but disabled. snapshot_date=%s",
+                            snapshot_date.isoformat(),
+                        )
 
                 normalized_rows, invalid_rows, upside_ready_count, filtered_ir_rows, filtered_ipo_rows = self._normalize_rows(rows, snapshot_date)
                 inserted, skipped = self._persist_reports(session, normalized_rows)

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, alias="APP_PORT")
     database_url: str = Field(default="sqlite:///./data/app.db", alias="DATABASE_URL")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    enable_playwright_fallback: bool = Field(default=True, alias="ENABLE_PLAYWRIGHT_FALLBACK")
     export_dir: str = Field(default="./data/exports", alias="EXPORT_DIR")
     snapshot_dir: str = Field(default="./data/snapshots", alias="SNAPSHOT_DIR")
     log_dir: str = Field(default="./data/logs", alias="LOG_DIR")
